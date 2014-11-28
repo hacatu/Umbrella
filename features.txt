@@ -1,0 +1,36 @@
+{
+Functions:
+f a b = a + b
+Tuples:
+() (a,) (a, b) (a, b,) ([i]=a) ([i]=a,)
+Lists/dicts:
+[] [a,] [a, b] [a, b,] [[i]=a] [[i]=a,]
+Infixing:
+a `o` b
+Type constrains:
+a:f f:(a->b->c)
+Pattern matching:
+f (a, b) = a
+f t;(a, b) = (t, a)
+Comments:
+{comment}
+Strings:
+"string" 'heredoc"string"heredoc'
+These:
+# = current caller
+\ = current function
+@ = current object
+Keywords:
+let continue break return throw
+type trait
+Builtin functions:
+Builtin operators:
+$ % ^ & * - + = / > < >= <= != == ++ | . " " <>
+Prefix operators:
+- ! * &
+}
+
+{
+
+}
+
