@@ -1,36 +1,161 @@
 {
 Functions:
 f a b = a + b
-Tuples:
+
+Tuples: {defined}
 () (a,) (a, b) (a, b,) ([i]=a) ([i]=a,)
-Lists/dicts:
+
+Lists/dicts: {defined}
 [] [a,] [a, b] [a, b,] [[i]=a] [[i]=a,]
-Infixing:
+
+Infixing: {defined}
 a `o` b
-Type constrains:
+
+Type constrains: {defined}
 a:f f:(a->b->c)
-Pattern matching:
+
+Pattern matching: {defined}
 f (a, b) = a
 f t;(a, b) = (t, a)
-Comments:
+
+Comments: {defined}
 {comment}
-Strings:
+
+Strings: {defined}
 "string" 'heredoc"string"heredoc'
-These:
+
+These: {defined}
 # = current caller
 \ = current function
 @ = current object
+
 Keywords:
-let continue break return throw
-type trait
+let continue break return yield throw
+
+infix type trait
+
 Builtin functions:
-Builtin operators:
+
+Builtin operators: {defined}
 $ % ^ & * - + = / > < >= <= != == ++ | . " " <>
+
 Prefix operators:
 - ! * &
+
 }
 
 {
+	builtin operators:
+	0	":", ";"
+	1	"[]", "."
+	3	" "
+	c	*"="
+}
 
+{
+space=####
+indent=####
+dedent=####
+identifier=
+	[^0-9`~!$%^&*()-+=|\\{}[\]'":;?/<>,.] [`~!$%^&*()-+=|\\{}[\]'":;?/<>,.]*
+operator=
+	space? sigils space?
+	space? "`" space? r_expr space? "`" space?
+	space
+sigils=
+	[~!$%^&*-+|\\'":;?/<>,.]+
+int=
+	int_2
+	int_8
+	int_10
+	int_16
+	int_64
+int_2=
+	"0b" digit_2+
+int_8=
+	"0o" digit_8+
+int_10=
+	"0d"? digit_10+
+int_16=
+	"0x" digit_16+
+int_64=
+	"0s" digit_64+
+digit_2=
+	[01]
+digit_8=
+	[0-7]
+digit_10=
+	[0-9]
+digit_16=
+	[0-9a-fA-F]
+digit_64=
+	[0-9a-zA-Z]
+literal=
+	int
+	string
+	char
+	tuple
+	dict
+start=
+	statements
+statements=
+	(statement space? "\n")*
+block=
+	indent statements dedent
+statement=
+	"let" space l_expr space? "=" space? expr_c
+	"continue" (space identifier)?
+	"break" (space identifier)?
+	"return" (space r_expr)?
+	"yield" (space r_expr (space identifier)?)?
+	"throw" (space r_expr)
+	"infixr"|"infixl" space sigils space int
+	"type" l_expr space? "=" space? l_expr (space? "|" space? l_expr)*
+	"trait" space l_expr space? "=" block
+	expr_c
+expr_c=
+	l_expr space? op_c space? expr_c
+	r_expr
+op_c=
+	sigils "="
+	"`" space? r_expr space? "`" "="
+l_expr=
+	l_expr_3
+l_expr_3=
+	l_expr_0 (space l_expr_1)*
+l_expr_1=
+	parens (space? ";" space? parens)? (space? ":" space? constraint)*
+l_expr_0=
+	("*")* l_expr_2
+l_expr_2=
+	parens (space? ("." space? identifier)|("[" space? expr_c space? "]"))*
+parens=
+	section
+	"(" space? expr_c space? ")"
+	literal
+	identifier
+constraint=
+	(identifer space? ":" space? constraint space? ("," space? identifier space? ":" space? constraint space?)* "=>" space?)? l_expr_2 (space? "->" space? l_expr_2)*
+r_expr=
+	r_expr_0 (operator r_expr_0)*
+r_expr_0=
+	[*&!-]* l_expr_2
+section=####
+string=
+	"\"" ([^\\"] | escape)* "\""
+	"'" <HEREDOC> "\"" ... "\"" <HEREDOC> "'"
+char=
+	"'" ([^\\'] | escape)? "'"
+escape=####
+tuple=
+	"(" space? ")"
+	"(" (space? element space? ",")+ (space? element space?)? ")"
+dict=
+	"[" (space? element space? ",")* (space? element space?)? "]"
+element=
+	index? expr_c
+index=
+	"[" (space? expr_c space?)? "]" space? "=" space?
+	"." identifier? space? "=" space?
 }
 
