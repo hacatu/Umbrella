@@ -1,58 +1,7 @@
-{
-Functions:
-f a b = a + b
+#include <parser.h>
+#include <ptree.h>
 
-Tuples: {defined}
-() (a,) (a, b) (a, b,) ([i]=a) ([i]=a,)
-
-Lists/dicts: {defined}
-[] [a,] [a, b] [a, b,] [[i]=a] [[i]=a,]
-
-Infixing: {defined}
-a `o` b
-
-Type constrains: {defined}
-a:f f:(a->b->c)
-
-Pattern matching: {defined}
-f (a, b) = a
-f t;(a, b) = (t, a)
-
-Comments: {defined}
-{comment}
-
-Strings: {defined}
-"string" 'heredoc"string"heredoc'
-
-These: {defined}
-# = current caller
-\ = current function
-@ = current object
-
-Keywords:
-let continue break return yield throw
-
-infix type trait
-
-Builtin functions:
-
-Builtin operators: {defined}
-$ % ^ & * - + = / > < >= <= != == ++ | . " " <>
-
-Prefix operators:
-- ! * &
-
-}
-
-{
-	builtin operators:
-	0	":", ";"
-	1	"[]", "."
-	3	" "
-	c	*"="
-}
-
-{
+/*
 space=####
 indent=####
 dedent=####
@@ -159,5 +108,54 @@ index=
 	"[" (space? expr_c space?)? "]" space? "=" space?
 	"." identifier? space? "=" space?
 decimal=####
-}
+*/
+
+int space(PRA_Position *p, PRA_Ptree *t);
+int optionalSpace(PRA_Position *p, PRA_Ptree *t);
+int indent(PRA_Position *p, PRA_Ptree *t);
+int dedent(PRA_Position *p, PRA_Ptree *t);
+int identifier(PRA_Position *p, PRA_Ptree *t);
+int operator(PRA_Position *p, PRA_Ptree *t);
+int operatorBesidesSpace(PRA_Position *p, PRA_Ptree *t);
+int sigils(PRA_Position *p, PRA_Ptree *t);
+int sigil(PRA_Position *p, PRA_Ptree *t);
+int integer(PRA_Position *p, PRA_Ptree *t);
+int int_2(PRA_Position *p, PRA_Ptree *t);
+int int_8(PRA_Position *p, PRA_Ptree *t);
+int int_10(PRA_Position *p, PRA_Ptree *t);
+int int_16(PRA_Position *p, PRA_Ptree *t);
+int int_64(PRA_Position *p, PRA_Ptree *t);
+int digit_2(PRA_Position *p, PRA_Ptree *t);
+int digit_8(PRA_Position *p, PRA_Ptree *t);
+int digit_10(PRA_Position *p, PRA_Ptree *t);
+int digit_16(PRA_Position *p, PRA_Ptree *t);
+int digit_64(PRA_Position *p, PRA_Ptree *t);
+int decimal(PRA_Position *p, PRA_Ptree *t);
+int literal(PRA_Position *p, PRA_Ptree *t);
+int string(PRA_Position *p, PRA_Ptree *t);
+int character(PRA_Position *p, PRA_Ptree *t);
+int tuple(PRA_Position *p, PRA_Ptree *t);
+int dict(PRA_Position *p, PRA_Ptree *t);
+int start(PRA_Position *p, PRA_Ptree *t);
+int statements(PRA_Position *p, PRA_Ptree *t);
+int statement(PRA_Position *p, PRA_Ptree *t);
+int newline(PRA_Position *p, PRA_Ptree *t);
+int block(PRA_Position *p, PRA_Ptree *t);
+int expr_c(PRA_Position *p, PRA_Ptree *t);
+int op_c(PRA_Position *p, PRA_Ptree *t);
+int l_expr(PRA_Position *p, PRA_Ptree *t);
+int l_expr_3(PRA_Position *p, PRA_Ptree *t);
+int l_expr_1(PRA_Position *p, PRA_Ptree *t);
+int l_expr_2(PRA_Position *p, PRA_Ptree *t);
+int l_expr_0(PRA_Position *p, PRA_Ptree *t);
+int parens(PRA_Position *p, PRA_Ptree *t);
+int constraint(PRA_Position *p, PRA_Ptree *t);
+int r_expr(PRA_Position *p, PRA_Ptree *t);
+int r_expr_0(PRA_Position *p, PRA_Ptree *t);
+int section(PRA_Position *p, PRA_Ptree *t);
+int escape(PRA_Position *p, PRA_Ptree *t);
+int element(PRA_Position *p, PRA_Ptree *t);
+int subscript(PRA_Position *p, PRA_Ptree *t);
+
+
 
