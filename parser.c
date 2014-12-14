@@ -110,8 +110,8 @@ index=
 decimal=####
 */
 
-int space(PRA_Position *p, PRA_Ptree *t);
-int optionalSpace(PRA_Position *p, PRA_Ptree *t);
+int space(PRA_Position *p, PRA_Ptree *t);//
+int whitespace_char(PRA_Position *p, PRA_Ptree *t);//
 int indent(PRA_Position *p, PRA_Ptree *t);
 int dedent(PRA_Position *p, PRA_Ptree *t);
 int identifier(PRA_Position *p, PRA_Ptree *t);
@@ -119,18 +119,19 @@ int operator(PRA_Position *p, PRA_Ptree *t);
 int operatorBesidesSpace(PRA_Position *p, PRA_Ptree *t);
 int sigils(PRA_Position *p, PRA_Ptree *t);
 int sigil(PRA_Position *p, PRA_Ptree *t);
-int integer(PRA_Position *p, PRA_Ptree *t);
+int integer(PRA_Position *p, PRA_Ptree *t);//
 int int_2(PRA_Position *p, PRA_Ptree *t);
 int int_8(PRA_Position *p, PRA_Ptree *t);
-int int_10(PRA_Position *p, PRA_Ptree *t);
+int int_10(PRA_Position *p, PRA_Ptree *t);//
 int int_16(PRA_Position *p, PRA_Ptree *t);
 int int_64(PRA_Position *p, PRA_Ptree *t);
-int digit_2(PRA_Position *p, PRA_Ptree *t);
-int digit_8(PRA_Position *p, PRA_Ptree *t);
-int digit_10(PRA_Position *p, PRA_Ptree *t);
-int digit_16(PRA_Position *p, PRA_Ptree *t);
-int digit_64(PRA_Position *p, PRA_Ptree *t);
-int decimal(PRA_Position *p, PRA_Ptree *t);
+int digit_2(PRA_Position *p, PRA_Ptree *t);//
+int digit_8(PRA_Position *p, PRA_Ptree *t);//
+int digit_10(PRA_Position *p, PRA_Ptree *t);//
+int digit_16(PRA_Position *p, PRA_Ptree *t);//
+int digit_64(PRA_Position *p, PRA_Ptree *t);//
+int decimal(PRA_Position *p, PRA_Ptree *t);//
+int decimal_sub(PRA_Position *p, PRA_Ptree *t);//
 int literal(PRA_Position *p, PRA_Ptree *t);
 int string(PRA_Position *p, PRA_Ptree *t);
 int character(PRA_Position *p, PRA_Ptree *t);
@@ -156,6 +157,58 @@ int section(PRA_Position *p, PRA_Ptree *t);
 int escape(PRA_Position *p, PRA_Ptree *t);
 int element(PRA_Position *p, PRA_Ptree *t);
 int subscript(PRA_Position *p, PRA_Ptree *t);
+
+int digit_10(PRA_Position *p, PRA_Ptree *t){
+	return PRA_oneOf(p, t, PRA_PASS, "0123456789");
+}
+
+int int_10(PRA_Position *p, PRA_Ptree *t){
+	return PRA_repeat(p, t, PRA_PASS, digit_10, 1, 0);
+}
+
+int integer(PRA_Position *p, PRA_Ptree *t){
+	if(PRA_try(p, t, PRA_ADD, int_10)){
+		PRA_setString(t, "(int_10)", 8);
+		return 1;
+	}
+	return 0;
+}
+
+int decimal(PRA_Position *p, PRA_Ptree *t){
+	PRA_setString(t, "(decimal)", 9);
+	if(PRA_accept(p, t, PRA_ADD, decimal_sub)){
+		return 1;
+	}
+	return 0;
+}
+
+int decimal_sub(PRA_Position *p, PRA_Ptree *t){
+	if(!PRA_accept(p, t, PRA_PASS, int_10)){
+		return 0;
+	}
+	if(!PRA_acceptString(p, t, PRA_PASS, ".")){
+		return 0;
+	}
+	if(!PRA_accept(p, t, PRA_PASS, int_10)){
+		return 0;
+	}
+	if(!PRA_oneOf(p, t, PRA_PASS, "eE")){
+		return 1;
+	}
+	PRA_acceptString(p, t, PRA_PASS, "-");
+	if(!PRA_accept(p, t, PRA_PASS, int_10)){
+		return 0;
+	}
+	return 1;
+}
+
+int space(PRA_Position *p, PRA_Ptree *t){
+	return PRA_repeat(p, t, PRA_SKIP, whitespace_char);
+}
+
+int whitespace_char(PRA_Position *p, PRA_Ptree *t){
+	return PRA_oneOf(p, t, PRA_SKIP, " \t\v");// note: \n and \r\f are newlines and should be considered seperately, and so should indentation
+}
 
 
 
