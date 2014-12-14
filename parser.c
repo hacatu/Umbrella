@@ -114,8 +114,8 @@ decimal=####
 
 int space(PRA_Position *p, PRA_Ptree *t);//
 int whitespace_char(PRA_Position *p, PRA_Ptree *t);//
-int indent(PRA_Position *p, PRA_Ptree *t);
-int dedent(PRA_Position *p, PRA_Ptree *t);
+int indent(PRA_Position *p, PRA_Ptree *t);//####
+int dedent(PRA_Position *p, PRA_Ptree *t);//####
 int identifier(PRA_Position *p, PRA_Ptree *t);//
 int identifier_char(PRA_Position *p, PRA_Ptree *t);//
 int operator(PRA_Position *p, PRA_Ptree *t);//
@@ -141,11 +141,11 @@ int string_char(PRA_Position *p, PRA_Ptree *t);//
 int character(PRA_Position *p, PRA_Ptree *t);//
 int tuple(PRA_Position *p, PRA_Ptree *t);//
 int dict(PRA_Position *p, PRA_Ptree *t);//
-int start(PRA_Position *p, PRA_Ptree *t);
-int statements(PRA_Position *p, PRA_Ptree *t);
-int statement(PRA_Position *p, PRA_Ptree *t);
-int newline(PRA_Position *p, PRA_Ptree *t);
-int block(PRA_Position *p, PRA_Ptree *t);
+int start(PRA_Position *p, PRA_Ptree *t);//
+int statements(PRA_Position *p, PRA_Ptree *t);//
+int statement(PRA_Position *p, PRA_Ptree *t);//
+int newline(PRA_Position *p, PRA_Ptree *t);//
+int block(PRA_Position *p, PRA_Ptree *t);//####
 int expr_c(PRA_Position *p, PRA_Ptree *t);
 int op_c(PRA_Position *p, PRA_Ptree *t);//
 int l_expr(PRA_Position *p, PRA_Ptree *t);
@@ -158,7 +158,7 @@ int constraint(PRA_Position *p, PRA_Ptree *t);
 int r_expr(PRA_Position *p, PRA_Ptree *t);
 int r_expr_0(PRA_Position *p, PRA_Ptree *t);
 int section(PRA_Position *p, PRA_Ptree *t);
-int escape(PRA_Position *p, PRA_Ptree *t);
+int escape(PRA_Position *p, PRA_Ptree *t);//####
 int element(PRA_Position *p, PRA_Ptree *t);//
 int element_separator(PRA_Position *p, PRA_Ptree *t);//
 int subscript(PRA_Position *p, PRA_Ptree *t);//
@@ -283,7 +283,7 @@ int sigils(PRA_Position *p, PRA_Ptree *t){
 	return PRA_repeat(p, t, PRA_PASS, sigil, 1, 0);
 }
 
-int string(PRA_Position *p, PRA_Ptree *t){
+int string(PRA_Position *p, PRA_Ptree *t){//note: need to add heredocs
 	if(!PRA_acceptString(p, t, PRA_SKIP, "\""){
 		return 0;
 	}
@@ -441,6 +441,67 @@ int subscript(PRA_Position *p, PRA_Ptree *t){
 	PRA_acceptString(p, t, PRA_SKIP, "=");
 	PRA_accept(p, t, PRA_SKIP, space);
 	return 1;
+}
+
+int start(PRA_Position *p, PRA_Ptree *t){
+	if(!PRA_accept(p, t, PRA_PASS, statements)){
+		return 0;
+	}
+	PRA_accept(p, t, PRA_SKIP, newline);
+	return 1;
+}
+
+int statements(PRA_Position *p, PRA_Ptree *t){
+	return PRA_sepBy(p, t, PRA_ADD, PRA_SKIP, statement, newline);
+}
+
+int newline(PRA_Position *p, PRA_Ptree *t){
+	PRA_accept(p, t, PRA_SKIP, space);
+	return PRA_acceptString(p, t, PRA_SKIP, "\n");
+}
+
+int statement(PRA_Position *p, PRA_Ptree *t){
+	if(PRA_try(p, t, PRA_ADD, statement_let)){
+		PRA_setString(t, "(statement_let)", 15);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, statement_continue)){
+		PRA_setString(t, "(statement_continue)", 20);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, statement_break)){
+		PRA_setString(t, "(statement_break)", 17);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, statement_return)){
+		PRA_setString(t, "(statement_return)", 18);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, statement_yield)){
+		PRA_setString(t, "(statement_yield)", 17);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, statement_throw)){
+		PRA_setString(t, "(statement_throw)", 17);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, statement_infix)){
+		PRA_setString(t, "(statement_infix)", 17);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, statement_type)){
+		PRA_setString(t, "(statement_type)", 16);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, statement_trait)){
+		PRA_setString(t, "(statement_trait)", 17);
+		return 1;
+	}
+	if(PRA_try(p, t, PRA_ADD, expr_c)){
+		PRA_setString(t, "(statement_expr)", 16);
+		return 1;
+	}
+	return 0;
 }
 
 
