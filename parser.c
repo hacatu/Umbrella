@@ -1,5 +1,10 @@
 #include <parser.h>
 #include <ptree.h>
+#include <stdlib.h>
+
+typedef struct{
+	size_t indent;
+} IndentState;
 
 /*
 space=####
@@ -73,6 +78,7 @@ op_c=
 	sigils "="
 	"`" space? r_expr space? "`" "="
 */
+
 /*
 l_expr=
 	l_expr_3
@@ -95,7 +101,10 @@ r_expr=
 	r_expr_0 (operator r_expr_0)*
 r_expr_0=
 	([*&!-] | "..")* l_expr_2
-section=####
+section=
+	"(" space? operator space? ")"
+	"(" space? r_exper space? operator space? ")"
+	"(" space? operator space? r_expr space? ")"
 string=
 	"\"" ([^\\"] | escape)* "\""
 	"'" <HEREDOC> "\"" ... "\"" <HEREDOC> "'"
@@ -118,6 +127,7 @@ decimal=####
 int space(PRA_Position *p, PRA_Ptree *t);//
 int whitespace_char(PRA_Position *p, PRA_Ptree *t);//
 int indent(PRA_Position *p, PRA_Ptree *t);//####
+int nodent(PRA_Position *p, PRA_Ptree *t);//####
 int dedent(PRA_Position *p, PRA_Ptree *t);//####
 int identifier(PRA_Position *p, PRA_Ptree *t);//
 int identifier_char(PRA_Position *p, PRA_Ptree *t);//
@@ -158,7 +168,7 @@ int statement_type(PRA_Position *p, PRA_Ptree *t);//
 int statement_trait(PRA_Position *p, PRA_Ptree *t);//
 int type_sep(PRA_Position *p, PRA_Ptree *t);//
 int newline(PRA_Position *p, PRA_Ptree *t);//
-int block(PRA_Position *p, PRA_Ptree *t);//####
+int block(PRA_Position *p, PRA_Ptree *t);//
 int expr_c(PRA_Position *p, PRA_Ptree *t);//
 int expr_c_sub(PRA_Position *p, PRA_Ptree *t);//
 int op_c(PRA_Position *p, PRA_Ptree *t);//
@@ -178,12 +188,39 @@ int constraint_sep(PRA_Position *p, PRA_Ptree *t);//
 int fbind(PRA_Position *p, PRA_Ptree *t);//
 int r_expr(PRA_Position *p, PRA_Ptree *t);//
 int r_expr_0(PRA_Position *p, PRA_Ptree *t);//
-int section(PRA_Position *p, PRA_Ptree *t);//####
-int escape(PRA_Position *p, PRA_Ptree *t);//####
+int section(PRA_Position *p, PRA_Ptree *t);//
+int escape(PRA_Position *p, PRA_Ptree *t);//
 int element(PRA_Position *p, PRA_Ptree *t);//
 int element_separator(PRA_Position *p, PRA_Ptree *t);//
 int subscript(PRA_Position *p, PRA_Ptree *t);//
 int subscript_sub(PRA_Position *p, PRA_Ptree *t);//
+
+int indent(PRA_Position *p, PRA_Ptree *t){
+	size_t margin = ((IndentState*)PRA_getState(p))->indent;
+	if(!PRA_accept(p, t, PRA_SKIP, newline)){
+		return 0;
+	}
+	PRA_accept(p, t, PRA_SKIP, space);
+	return margin < (((IndentState*)PRA_getState(p))->indent = PRA_currentColumn(p) - 1);
+}
+
+int nodent(PRA_Position *p, PRA_Ptree *t){
+	size_t margin = ((IndentState*)PRA_getState(p))->indent;
+	if(!PRA_accept(p, t, PRA_SKIP, newline)){
+		return 0;
+	}
+	PRA_accept(p, t, PRA_SKIP, space);
+	return margin == (((IndentState*)PRA_getState(p))->indent = PRA_currentColumn(p) - 1);
+}
+
+int dedent(PRA_Position *p, PRA_Ptree *t){
+	size_t margin = ((IndentState*)PRA_getState(p))->indent;
+	if(!PRA_accept(p, t, PRA_SKIP, newline)){
+		return 0;
+	}
+	PRA_accept(p, t, PRA_SKIP, space);
+	return margin > (((IndentState*)PRA_getState(p))->indent = PRA_currentColumn(p) - 1);
+}
 
 int digit_2(PRA_Position *p, PRA_Ptree *t){
 	return PRA_oneOf(p, t, PRA_PASS, "01");
@@ -322,6 +359,46 @@ int string_char(PRA_Position *p, PRA_Ptree *t){
 	return PRA_accept(p, t, PRA_PASS, escape);
 }
 
+int escape(PRA_Position *p, PRA_Ptree *t){
+	if(!PRA_acceptString(p, t, PRA_SKIP, "\\")){
+		return 0;
+	}
+	switch(PRA_currentChar(p)){
+		case 'f':
+		PRA_setString(t, "\f", 1);
+		return 1;
+		case 'n':
+		PRA_setString(t, "\n", 1);
+		return 1;
+		case 'r':
+		PRA_setString(t, "\r", 1);
+		return 1;
+		case 't':
+		PRA_setString(t, "\t", 1);
+		return 1;
+		case 'v':
+		PRA_setString(t, "\v", 1);
+		return 1;
+		case '\\':
+		PRA_setString(t, "\\", 1);
+		return 1;
+		case '\'':
+		PRA_setString(t, "'", 1);
+		return 1;
+		case '"':
+		PRA_setString(t, "\"", 1);
+		return 1;
+		case 'o':
+		PRA_setString(t, (char[]){(char)strtol((char[]){PRA_getChar(p), PRA_getChar(p), PRA_getChar(p), '\0'}, NULL, 8), '\0'}, 1);
+		return 1;
+		case 'x':
+		PRA_setString(t, (char[]){(char)strtol((char[]){PRA_getChar(p), PRA_getChar(p), '\0'}, NULL, 16), '\0'}, 1);
+		return 1;
+		default:
+		return 0;
+	}
+}
+
 int character(PRA_Position *p, PRA_Ptree *t){
 	if(!PRA_acceptString(p, t, PRA_SKIP, "'")){
 		return 0;
@@ -332,6 +409,28 @@ int character(PRA_Position *p, PRA_Ptree *t){
 		}
 	}
 	return PRA_acceptString(p, t, PRA_SKIP, "'");
+}
+
+int section(PRA_Position *p, PRA_Ptree *t){
+	if(!PRA_acceptString(p, t, PRA_SKIP, "(")){
+		return 0;
+	}
+	PRA_accept(p, t, PRA_SKIP, space);
+	if(PRA_try(p, t, PRA_ADD, r_expr)){
+		PRA_accept(p, t, PRA_SKIP, space);
+		if(!PRA_accept(p, t, PRA_ADD, operator)){
+			return 0;
+		}
+		PRA_accept(p, t, PRA_SKIP, space);
+		return PRA_acceptString(p, t, PRA_SKIP, ")");
+	}
+	if(!PRA_accept(p, t, PRA_ADD, operator)){
+		return 0;
+	}
+	PRA_accept(p, t, PRA_SKIP, space);
+	PRA_accept(p, t, PRA_ADD, r_expr);
+	PRA_accept(p, t, PRA_SKIP, space);
+	return PRA_acceptString(p, t, PRA_SKIP, ")");
 }
 
 int operator(PRA_Position *p, PRA_Ptree *t){
@@ -499,6 +598,10 @@ int subscript_sub(PRA_Position *p, PRA_Ptree *t){
 }
 
 int start(PRA_Position *p, PRA_Ptree *t){
+	if(!PRA_allocState(p, sizeof(IndentState))){
+		return 0;
+	}
+	*((IndentState*)PRA_getState(p)) = (IndentState){.indent = 0};
 	if(!PRA_accept(p, t, PRA_PASS, statements)){
 		return 0;
 	}
@@ -507,12 +610,26 @@ int start(PRA_Position *p, PRA_Ptree *t){
 }
 
 int statements(PRA_Position *p, PRA_Ptree *t){
-	return PRA_sepBy(p, t, PRA_ADD, PRA_SKIP, statement, newline, 1, 0);
+	return PRA_sepBy(p, t, PRA_ADD, PRA_SKIP, statement, nodent, 1, 0);
 }
 
 int newline(PRA_Position *p, PRA_Ptree *t){
 	PRA_accept(p, t, PRA_SKIP, space);
-	return PRA_acceptString(p, t, PRA_SKIP, "\n");
+	if(!PRA_acceptString(p, t, PRA_SKIP, "\n")){
+		return 0;
+	}
+	((IndentState*)PRA_getState(p))->indent = 0;
+	return 1;
+}
+
+int block(PRA_Position *p, PRA_Ptree *t){
+	if(!PRA_accept(p, t, PRA_SKIP, indent)){
+		return 0;
+	}
+	if(!PRA_accept(p, t, PRA_ADD, statements)){
+		return 0;
+	}
+	return PRA_accept(p, t, PRA_SKIP, dedent);
 }
 
 int statement(PRA_Position *p, PRA_Ptree *t){
@@ -827,5 +944,28 @@ int parens_sub(PRA_Position *p, PRA_Ptree *t){
 	}
 	PRA_accept(p, t, PRA_SKIP, space);
 	return PRA_acceptString(p, t, PRA_SKIP, ")");
+}
+
+int main(int argc, char **argv){
+	if(argc < 2){
+		puts("Too few arguments.  Please specify the file to parse.");
+		return 1;
+	}
+	FILE *file = fopen(argv[1], "r");
+	if(!file){
+		printf("Failed to open file \"%s\"!\n", argv[1]);
+		return 2;
+	}
+	PRA_Ptree *t = PRA_parseFile(file, start);
+	if(!t){
+		puts("Parsing unsuccessful.");
+		fclose(file);
+		return 3;
+	}
+	puts("It worked! Output:");
+	PRA_printPtree(t, 0);
+	PRA_deletePtree(t);
+	free(t);
+	fclose(file);
 }
 
