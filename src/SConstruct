@@ -1,0 +1,12 @@
+import os
+import os.path
+import sys
+
+join = os.path.join
+
+Import("env BASE LIBS EXENAME")
+
+PARSER_FILES = Glob("*.c")
+
+env.Program(join(BASE, "bin", EXENAME.format(name="umbrella.parser")), PARSER_FILES, LIBS=LIBS)
+
